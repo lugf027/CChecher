@@ -12,7 +12,64 @@
 
 
 
-## 摘要
+
+
+**CONTENTS:**
+
+* [0、ABSTRACT](#0-abstract)
+* [1、INTRODUCTION](#1-introduction)
+* [2、EXPLOIT MITIGATIONS VS. SANITIZERS](#2-exploit-mitigations-vs-sanitizers)
+* [3. LOW - LEVEL VULNERABILITIES](#3-low---level-vulnerabilities)
+  + [3.1 违反内存安全(Memory Safety Violations)](#31--------memory-safety-violations-)
+    - [3.1.1 空间安全违规 ( Spatial Safety Violations)：](#311----------spatial-safety-violations--)
+    - [3.1.2 违反时间安全性(Temporal Safety Violations)：](#312---------temporal-safety-violations--)
+  + [3.2 使用未初始化的变量(Use of Uninitialized Variables)](#32-----------use-of-uninitialized-variables-)
+  + [3.3 指针类型错误（Pointer Type Errors）](#33--------pointer-type-errors-)
+  + [3.4 可变参数功能滥用 ( Variadic Function Misuse)](#34------------variadic-function-misuse-)
+  + [3.5 其他漏洞 (Other Vulnerabilities)](#35-------other-vulnerabilities-)
+* [4. BUG FINDING TECHNIQUES](#4-bug-finding-techniques)
+  + [4.1 违反内存安全 (Memory Safety Violations)](#41---------memory-safety-violations-)
+    - [4.1.1 违反空间内存安全 (Spatial Memory Safety Violations)：](#411-----------spatial-memory-safety-violations--)
+    - [4.1.2 违反时间内存安全 (Temporal Memory Safety Violations)：](#412-----------temporal-memory-safety-violations--)
+  + [4.2 使用未初始化的变量 (Use of Uninitialized Variables)](#42------------use-of-uninitialized-variables-)
+  + [4.3 指针类型错误 ( Pointer Type Errors)](#43----------pointer-type-errors-)
+  + [4.4 可变参数功能误用 (Variadic Function Misuse)](#44-----------variadic-function-misuse-)
+  + [4.5 其他漏洞](#45-----)
+* [5. PROGRAM INSTRUMENTATION](#5-program-instrumentation)
+  + [5.1 源码层次检测 (Language-level Instrumentation)](#51---------language-level-instrumentation-)
+  + [5.2 IR层次检测 (IR-level Instrumentation)](#52-ir------ir-level-instrumentation-)
+  + [5.3 二进制检测 (Binary Instrumentation)](#53--------binary-instrumentation-)
+  + [5.4 库打桩 (Library Interposition)](#54------library-interposition-)
+* [6. META DATA MANAGEMENT](#6-meta-data-management)
+  + [6.1 对象元数据 (Object Metadata)](#61--------object-metadata-)
+  + [6.2 指针元数据 （Pointer Metadata）](#62--------pointer-metadata-)
+  + [6.3 静态元数据 (Static Metadata)](#63--------static-metadata-)
+* [7.  RIVING A SANITIZER](#7--riving-a-sanitizer)
+* [8. ANALYSIS](#8-analysis)
+  + [8.1 误报（False Positives）](#81----false-positives-)
+  + [8.2 漏报 (False Negatives)](#82-----false-negatives-)
+  + [8.3 检测不完整 (Incomplete Instrumentation)](#83--------incomplete-instrumentation-)
+  + [8.4 线程安全 （ Thread Safety）](#84--------thread-safety-)
+  + [8.5 绩效开销 （Performance Overhead）](#85-------performance-overhead-)
+  + [8.6 内存开销 (Memory Overhead)](#86-------memory-overhead-)
+* [9. DEPLOYMENT](#9-deployment)
+  + [9.1 Methodology](#91-methodology)
+  + [9.2  Findings](#92--findings)
+  + [9.3 Deployment Directions](#93-deployment-directions)
+* [10. FUTURE RESEARCH AND DEVELOPMENT DIRECTIONS](#10-future-research-and-development-directions)
+  + [10.1  Type Error Detection](#101--type-error-detection)
+  + [10.2 Improving Compatibility](#102-improving-compatibility)
+  + [10.3 Composing Sanitizers](#103-composing-sanitizers)
+  + [10.4  Hardware Support](#104--hardware-support)
+  + [10.5. Kernel and Bare-Metal Support](#105-kernel-and-bare-metal-support)
+* [11.  CONCLUSION](#11--conclusion)
+* [12. ACKNOWLEDGMENT](#12-acknowledgment)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
+
+
+## 0、ABSTRACT
 
 ​	众所周知，C和C ++编程语言是不安全的，但仍然是必不可少的。因此，开发人员会采取多管齐下的方法来解决对手面前的安全问题。这些包括手动，静态和动态程序分析。动态错误查找工具（以下称为 “ sanitizers”）可以查找其他类型的分析错误，因为它们会观察程序的实际执行情况，因此可以在发生错误时直接观察错误的程序行为。
 
