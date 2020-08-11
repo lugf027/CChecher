@@ -485,3 +485,41 @@ size_t size; // Size of the referent
 
 ​        增大内存对象分配大小或使用 disjoint or shadow metadata 存储方案的 Sanitizers 具有相当大的内存占用量。在可寻址内存空间有限的32位平台上，这可能会出现问题。例如，ASan [31]将 red zones 插入每个内存对象，并维护直接映射的阴影位图以存储可寻址性信息。因此，ASan将 SPEC2006 基准测试的内存使用量平均提高了3.37倍。基于Guard page 的诸如 Electric Fence [32]和 PageHeap [33]之类的内存安全 sanitizers，会在动态分配的对象的末尾插入整个内存页，因此具有更大的内存占用量。但是，一般而言，即使 sanitizers为程序中的每个对象或指针存储元数据，大多数 sanitizers也会平均将程序的内存占用量增加不到三倍。
 
+## 9. DEPLOYMENT
+
+​        我们研究了 sanitizers 的当前使用情况。我们的目标是确定（i）开发人员偏爱哪种 sanitizers；（ii）以及与那些不被喜欢的 sanitizers 相比有何不同。
+
+### 9.1 Methodology
+
+**Popular GitHub repositories ：**
+
+我们编译了 GitHub上前一百 C 和 C++ 语言项目，并检查了他们的打包生成和测试脚本、GitHub issues、提交历史。我们审查的大多数 sanitizers都需要在编译时集成到测试过的的程序中。因此，程序的打包生成配置将显示其是否为定期 sanitized 的。我们对测试套件和测试脚本的检查进一步表明，可以在测试期间启用哪些 sanitizers。与构建系统/配置文件相反，在此处将显示对在运行时 instrument programs 的 sanitizers（例如Memcheck）的引用。
+
+**Sanitizer web pages**：
+
+​        我们检查了网站上的 sanitizers工具，并使用 sanitizers 和对发现 bug 的确认来寻找项目的明确引用。
+
+**Search trends**：
+
+​        我们检查并比较了不同 sanitizers的搜索趋势。我们将 ASan 作为搜索趋势的基线，因为我们的研究表明，ASan 是目前应用最广泛的 sanitizer。
+
+### 9.2  Findings
+
+**AddressSanitizer is the most widely adopted sanitizer :**
+
+​        我们发现 GitHub 上最受欢迎的 C 和 C++ 项目中的24个和19个分别使用了 ASan 。我们认为，这种受欢迎程度可以归因于 ASan 的多项优势:（i）ASan 用可能性最高的漏洞类别检测漏洞（违反内存安全性）；（ii）ASan 具有高度的兼容性，因为在 not fully instrumented 程序中，它不会引起其他误报(例如，由于程序加载 uninstrumented shared libraries);（iii）ASan 通常具有较低的误报率，可以通过在程序中添加注释或将误报检测发生的位置添加到黑名单中来抑制确有检测到发生的误报；（iv ）ASan 已集成到主流编译器中，只需要对测试程序的构建系统进行微不足道的更改；（v）ASan 可扩展到大型程序，例如 Chromium 和 Firefox Web 浏览器。ASan和结合了带有 red-zone 的 location-based checking 的其他 sanitizers的缺点是存在漏报。
+
+​        一个有趣的发现是基于 DBT 的内存安全 sanitizers（例如 Memcheck 和Dr. Memory ）具有几乎相同的优势。此外，即使程序源代码的一部分不可用，这些 sanitizers也可以始终检测整个程序。然而，我们的研究表明，虽然 Memcheck 在将 ASan 引入 LLVM 和 GCC 之前很流行，但其实际使用情况现在落后于 ASan。Dr. Memory 是一种更为新的工具，其使用率从未达到任何一家竞争对手。
+
+**The adoption rate for other LLVM-based sanitizers is lower：**
+
+​        MSan 和 UBSan 也得到采用，这主要是由于对漏洞的关注度提高，例如未初始化的内存使用和整数溢出。但是，用户经常报告较高的误报率，要避免这种情况，需要付出很大的努力。实际上，开发人员必须花大力气将这些 sanitizers 应用于大型项目，例如 Chromium Web 浏览器。为避免 MSan 误报，必须检测整个程序。在 Chromium 的情况下，这意味着必须将 MSan 插入到Web 浏览器中，包括后者的所有依赖项。对于 UBSan，开发人员维护了一长串的管制，最明显的是抑制了整个 V8 JavaScript 引擎中的所有检测。
+
+### 9.3 Deployment Directions
+
+​        部署风格情况暗示了 sanitizers 的理想特性。首先，所有部署的 sanitizers 都易于使用。具体来说，可以通过编译器标记（Clang sanitizers）启用它们，也可以将其应用于任何二进制文件（Memcheck）。其次，误报率与采用率成反比，即，误报率越低意味着采用率越高?（ASan 和 Memcheck vs MSan 和 UBSan）。第三，性能开销不是主要问题（使用Memcheck），但是可以使用更快的替代方法（Memcheck vs ASan）避免。
+
+​        我们自己将 sanitizers 应用于 SPEC 基准的经验表明，与广泛部署的 sanitizers 相比，研究原型受误报的影响更大（参见原文档表III）。ASan 成功运行了所有基准测试，正确报告了 SPEC 中的已知错误。Memcheck 运行了除 447.dealII 之外的所有基准测试，这需要超过48小时才能完成。相反，由于过于严格（例如，不支持整数指针）兼容性（例如，无法更新在 uninstrumented  libraries 中创建的指针 的边界）的问题，SoftBound + CETS 产生了很多错误的警告，无法运行许多基准测试。LFP 无法运行多个基准测试，因为假定 OOB 指针无法脱离于创建函数的不变性过于严格。DangSan提供了自己的补丁程序，以防止指针的错误无效。
+
+​        想要解决项目中内存安全问题的开发人员可以轻松地选择 ASan 或 Memcheck 。但是，他们应该意识到，这些工具不会检测所有类型的内存安全违规。希望采用 MSan 和 UBSan 的开发人员应该期望继续努力以重新编译所有依赖项和/或将其列入黑名单和注释，以消除误报。对于这些流行的 sanitizers 未涵盖的漏洞（例如，对象内溢出和由类型调整引起的类型错误），开发人员当前没有可行的选择。由于现有的研究原型无法适应实际的代码库，因此需要在这一领域进行进一步的研究。
+
