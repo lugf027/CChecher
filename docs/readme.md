@@ -10,72 +10,79 @@
 </p>
 *翻译肯定含有错误，且仅用于个人学习交流，不用于任何商业行为。--Lu*
 
+***Contents:***
 
+  * [0. ABSTRACT](#0-abstract)
 
+  * [1. INTRODUCTION](#1-introduction)
 
+  * [2. EXPLOIT MITIGATIONS VS. SANITIZERS](#2-exploit-mitigations-vs-sanitizers)
 
-**CONTENTS:**
+  * [3. LOW - LEVEL VULNERABILITIES](#3-low---level-vulnerabilities)
+    
+    + [3.1 Memory Safety Violations](#31-memory-safety-violations)
+      - [3.1.1 Spatial Safety Violations](#311-spatial-safety-violations)
+      - [3.1.2 Temporal Safety Violations](#312-temporal-safety-violations)
+    + [3.2 Use of Uninitialized Variables](#32-use-of-uninitialized-variables)
+    + [3.3 Pointer Type Errors](#33-pointer-type-errors)
+    + [3.4 Variadic Function Misuse](#34-variadic-function-misuse)
+    + [3.5 Other Vulnerabilities](#35-other-vulnerabilities)
+    
+  * [4. BUG FINDING TECHNIQUES](#4-bug-finding-techniques)
+    + [4.1 Memory Safety Violations](#41-memory-safety-violations)
+      - [4.1.1 Spatial Memory Safety Violations](#411-spatial-memory-safety-violations)
+      - [4.1.2 Temporal Memory Safety Violations](#412-temporal-memory-safety-violations)
+    + [4.2 Use of Uninitialized Variables](#42-use-of-uninitialized-variables)
+    + [4.3 Pointer Type Errors](#43-pointer-type-errors)
+    + [4.4 Variadic Function Misuse](#44-variadic-function-misuse)
+    + [4.5 Other Vulnerabilities](#45-other-vulnerabilities)
+    
+  * [5. PROGRAM INSTRUMENTATION](#5-program-instrumentation)
+    + [5.1 Language-level Instrumentation](#51-language-level-instrumentation)
+    + [5.2 IR-level Instrumentation](#52-ir-level-instrumentation)
+    + [5.3 Binary Instrumentation](#53-binary-instrumentation)
+    + [5.4 Library Interposition](#54-library-interposition)
+    
+  * [6. META DATA MANAGEMENT](#6-meta-data-management)
+    + [6.1 Object Metadata](#61-object-metadata)
+    + [6.2 Pointer Metadata](#62-pointer-metadata)
+    + [6.3 Static Metadata](#63-static-metadata)
+    
+  * [7.  RIVING A SANITIZER](#7--riving-a-sanitizer)
 
-* [0、ABSTRACT](#0-abstract)
-* [1、INTRODUCTION](#1-introduction)
-* [2、EXPLOIT MITIGATIONS VS. SANITIZERS](#2-exploit-mitigations-vs-sanitizers)
-* [3. LOW - LEVEL VULNERABILITIES](#3-low---level-vulnerabilities)
-  + [3.1 违反内存安全(Memory Safety Violations)](#31--------memory-safety-violations-)
-    - [3.1.1 空间安全违规 ( Spatial Safety Violations)：](#311----------spatial-safety-violations--)
-    - [3.1.2 违反时间安全性(Temporal Safety Violations)：](#312---------temporal-safety-violations--)
-  + [3.2 使用未初始化的变量(Use of Uninitialized Variables)](#32-----------use-of-uninitialized-variables-)
-  + [3.3 指针类型错误（Pointer Type Errors）](#33--------pointer-type-errors-)
-  + [3.4 可变参数功能滥用 ( Variadic Function Misuse)](#34------------variadic-function-misuse-)
-  + [3.5 其他漏洞 (Other Vulnerabilities)](#35-------other-vulnerabilities-)
-* [4. BUG FINDING TECHNIQUES](#4-bug-finding-techniques)
-  + [4.1 违反内存安全 (Memory Safety Violations)](#41---------memory-safety-violations-)
-    - [4.1.1 违反空间内存安全 (Spatial Memory Safety Violations)：](#411-----------spatial-memory-safety-violations--)
-    - [4.1.2 违反时间内存安全 (Temporal Memory Safety Violations)：](#412-----------temporal-memory-safety-violations--)
-  + [4.2 使用未初始化的变量 (Use of Uninitialized Variables)](#42------------use-of-uninitialized-variables-)
-  + [4.3 指针类型错误 ( Pointer Type Errors)](#43----------pointer-type-errors-)
-  + [4.4 可变参数功能误用 (Variadic Function Misuse)](#44-----------variadic-function-misuse-)
-  + [4.5 其他漏洞](#45-----)
-* [5. PROGRAM INSTRUMENTATION](#5-program-instrumentation)
-  + [5.1 源码层次检测 (Language-level Instrumentation)](#51---------language-level-instrumentation-)
-  + [5.2 IR层次检测 (IR-level Instrumentation)](#52-ir------ir-level-instrumentation-)
-  + [5.3 二进制检测 (Binary Instrumentation)](#53--------binary-instrumentation-)
-  + [5.4 库打桩 (Library Interposition)](#54------library-interposition-)
-* [6. META DATA MANAGEMENT](#6-meta-data-management)
-  + [6.1 对象元数据 (Object Metadata)](#61--------object-metadata-)
-  + [6.2 指针元数据 （Pointer Metadata）](#62--------pointer-metadata-)
-  + [6.3 静态元数据 (Static Metadata)](#63--------static-metadata-)
-* [7.  RIVING A SANITIZER](#7--riving-a-sanitizer)
-* [8. ANALYSIS](#8-analysis)
-  + [8.1 误报（False Positives）](#81----false-positives-)
-  + [8.2 漏报 (False Negatives)](#82-----false-negatives-)
-  + [8.3 检测不完整 (Incomplete Instrumentation)](#83--------incomplete-instrumentation-)
-  + [8.4 线程安全 （ Thread Safety）](#84--------thread-safety-)
-  + [8.5 绩效开销 （Performance Overhead）](#85-------performance-overhead-)
-  + [8.6 内存开销 (Memory Overhead)](#86-------memory-overhead-)
-* [9. DEPLOYMENT](#9-deployment)
-  + [9.1 Methodology](#91-methodology)
-  + [9.2  Findings](#92--findings)
-  + [9.3 Deployment Directions](#93-deployment-directions)
-* [10. FUTURE RESEARCH AND DEVELOPMENT DIRECTIONS](#10-future-research-and-development-directions)
-  + [10.1  Type Error Detection](#101--type-error-detection)
-  + [10.2 Improving Compatibility](#102-improving-compatibility)
-  + [10.3 Composing Sanitizers](#103-composing-sanitizers)
-  + [10.4  Hardware Support](#104--hardware-support)
-  + [10.5. Kernel and Bare-Metal Support](#105-kernel-and-bare-metal-support)
-* [11.  CONCLUSION](#11--conclusion)
-* [12. ACKNOWLEDGMENT](#12-acknowledgment)
+  * [8. ANALYSIS](#8-analysis)
+    + [8.1 False Positives](#81-false-positives)
+    + [8.2 False Negatives](#82-false-negatives)
+    + [8.3 Incomplete Instrumentation](#83-incomplete-instrumentation)
+    + [8.4 Thread Safety](#84-thread-safety)
+    + [8.5 Performance Overhead](#85-performance-overhead)
+    + [8.6 Memory Overhead](#86-memory-overhead)
+    
+  * [9. DEPLOYMENT](#9-deployment)
+    + [9.1 Methodology](#91-methodology)
+    + [9.2  Findings](#92--findings)
+    + [9.3 Deployment Directions](#93-deployment-directions)
+    
+  * [10. FUTURE RESEARCH AND DEVELOPMENT DIRECTIONS](#10-future-research-and-development-directions)
+    + [10.1  Type Error Detection](#101--type-error-detection)
+    + [10.2 Improving Compatibility](#102-improving-compatibility)
+    + [10.3 Composing Sanitizers](#103-composing-sanitizers)
+    + [10.4  Hardware Support](#104--hardware-support)
+    + [10.5. Kernel and Bare-Metal Support](#105-kernel-and-bare-metal-support)
+    
+  * [11.  CONCLUSION](#11--conclusion)
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+  * [12. ACKNOWLEDGMENT](#12-acknowledgment)
 
+    
 
-
-## 0、ABSTRACT
+## 0. ABSTRACT
 
 ​	众所周知，C和C ++编程语言是不安全的，但仍然是必不可少的。因此，开发人员会采取多管齐下的方法来解决对手面前的安全问题。这些包括手动，静态和动态程序分析。动态错误查找工具（以下称为 “ sanitizers”）可以查找其他类型的分析错误，因为它们会观察程序的实际执行情况，因此可以在发生错误时直接观察错误的程序行为。
 
 ​	大量的 sanitizers已由学术界原型化，并由从业人员完善。我们提供了 sanitizers的系统概述，重点是 sanitizers在发现安全问题中的作用。具体来说，我们对可用工具及其涵盖的安全漏洞进行分类，描述其性能和兼容性，并强调各种折衷方案。
 
-## 1、INTRODUCTION
+## 1. INTRODUCTION
 
 ​        C和C ++仍然是底层系统软件（例如，操作系统内核，运行时库和浏览器）的选择语言。关键原因在于它们高效且使程序员可以完全控制底层硬件。但另一方面，程序员必须确保每个内存访问都是有效的，没有计算会导致未定义的行为，等等。在实践中，程序员通常没有履行这些职责，并引入了使代码容易受到利用(容易发生漏洞并被利用这些漏洞)的错误。
 
@@ -87,7 +94,7 @@
 
 ​        本文的其余部分安排如下：我们从对 sanitizers和漏洞缓解措施两者间高层次表现比较开始（第2节）。接下来，我们描述C / C ++中的低层次漏洞（第3节）和分类技术以检测它们（第4节）。然后，我们继续介绍 sanitizers的两种关键实现方法：程序检测技术（第5节）和元数据管理（第6节）。然后，我们简要讨论如何用 sanitizers方式去驱动一个程序，以及如何最大化地发挥 sanitizers的功效（第七节）。接下来，我们将介绍正在积极维护种 或在学术会议上发布过的 sanitizers的一个汇总，重点是其精度，兼容性和性能/内存成本（第八节）。我们还将调查这些工具的部署情况（第IX节）。我们以研究方向的未来展望作为论文的结尾（第十节）。
 
-## 2、EXPLOIT MITIGATIONS VS. SANITIZERS
+## 2. EXPLOIT MITIGATIONS VS. SANITIZERS
 
 ​         sanitizers在许多方面类似于许多众所周知的漏洞利用缓解措施，它们可以以类似的方式来检测程序，例如，通过插入嵌入式参考监视器（IRM）。尽管有这些相似之处，但缓解利用漏洞措施和 sanitizers的目标和用例却大不相同。我们在表I中总结了主要差异。
 
@@ -113,13 +120,13 @@
 
 ​        鉴于与安全性相关的漏洞种类繁多，我们将重点介绍在C / C ++中具有特定安全性的漏洞。这不仅包括未定义的行为，还包括在缺乏类型和内存安全性的情况下可能具有潜在危险的定义良好的行为。我们简述这些错误以及如何利用它们来泄漏信息、提升特权或执行任意代码。
 
-### 3.1 违反内存安全(Memory Safety Violations)
+### 3.1 Memory Safety Violations
 
 ​        如果程序中的指针仅访问其  intended referents，而这些预期的引用是有效的，则该程序是 memory safe 。指针的预期对象是从其基址派生指针的对象。根据引用对象的类型，它在其分配和释放之间（对于堆分配的引用对象）、在函数调用与其返回（对于堆栈分配的引用对象）之间，在其关联线程的创建和销毁之间都是有效的（对于线程本地引用）或无期限的（对于全局引用）。
 
 ​        违反内存安全性是最严重的安全漏洞之一，并且在文献[15]，[16]中进行了广泛的研究。他们的利用可能导致代码注入[17]，控制流劫持[1]，[18]，[19]，特权升级[20]，信息泄漏[21]和程序崩溃。
 
-#### 3.1.1 空间安全违规 ( Spatial Safety Violations)：
+#### 3.1.1 Spatial Safety Violations
 
 ​        访问不（完全）在指针的预期引用范围之内的内存构成空间安全违规。缓冲区溢出是违反空间安全性的典型示例。当程序超出缓冲区末尾写入时，将发生缓冲区溢出。如果易受攻击的访问的目标对象是一个子对象（例如，结构字段），并且如果攻击者在同一对象内写入另一个子对象，则我们将其称为  intra-object overflow 。清单1显示了一个对象内溢出漏洞，可以利用该漏洞执行特权升级攻击。
 
@@ -131,7 +138,7 @@ struct A a; char buf[8];
 memcpy(/* dst */ a.name, /* src */ buf, sizeof(buf));
 ```
 
-#### 3.1.2 违反时间安全性(Temporal Safety Violations)：
+#### 3.1.2 Temporal Safety Violations
 
 当程序访问不再有效的引用时，发生违反时间安全性的行为。当一个对象变为无效时（通常是通过显式地对其进行分配），指向该对象的所有指针都将变为 dangling 。通过悬空指针访问对象被称为  use-after-free。访问的其范围或在函数返回之后本地对象外分别被称为  use-after-scope 和 use-after-return 。当攻击者可以重用和控制释放的区域时，这种类型的漏洞就可以被利用，如清单2所示。
 
@@ -145,7 +152,7 @@ free(p); // Pointer becomes dangling
 p->func(); // Use-after-free
 ```
 
-### 3.2 使用未初始化的变量(Use of Uninitialized Variables)
+### 3.2 Use of Uninitialized Variables
 
 ​        变量在初始化之前具有  indeterminate value [22]，[23]。如果源变量和目标变量都具有无符号的窄字符类型，则C++14允许将此不确定值赋给其他变量。任何未初始化变量的使用都会导致未定义的行为。这种不确定行为的影响取决于许多因素，包括用于编译程序的编译器和编译器标志。在大多数情况下，不确定值实际上是先前释放的变量的（部分）内容，这些变量所占用的内存位置与未初始化的变量相同。由于这些先前释放的变量有时可能对安全性敏感值，未初始化的内存的读取可能是信息泄漏攻击的一部分，如清单3所示。
 
@@ -158,7 +165,7 @@ p->data[0] = 0; // Partial initialization
 send_to_untrusted_client(p, sizeof(struct A));
 ```
 
-### 3.3 指针类型错误（Pointer Type Errors）
+### 3.3 Pointer Type Errors
 
 ​        C 和 C ++ 支持多种强制转换运算符和语言构造，这些构造运算符和语言构造可能导致内存访问错误地解释了其引用对象中存储的数据，从而违反了类型安全性。指针类型错误通常是由不安全的强制转换引起的。C 允许在指针类型之间进行所有类型转换，包括在整数和指针类型之间进行类型转换。同样，C++ reinterpret_cast 类型转换运算符不受任何限制。而 static_cast 和 dynamic_cast 的操作有所限制限制。static_cast 禁止指向整数强制转换的指针，以及禁止指向与继承无关的对象的指针之间的强制转换。但是，它的确允许将指针从基类强制转换为派生类（也称为downcasting ），以及从void 类型进行的所有强制转换。当向下转换的指针既没有其引用对象的运行时的类型，也没有引用对象的祖先类型之一时，就会发生 bad-casting（通常称为 type confusion）。
 
@@ -177,7 +184,7 @@ d->extra = ...; // Type-unsafe, out-of-bounds access, which
 
 ​        在函数指针类型之间进行转换时，也会发生类型错误。同样，C ++ 的 reinterpret_cast 和 C 对不兼容的函数指针类型之间的强制转换没有任何限制。如果通过错误类型的函数指针间接调用函数，则目标函数可能会错误地编译(误解)其参数，从而导致更多类型错误。最后，C 还允许通过 union 类型进行类型修剪。如果程序通过转换实际存储数据的成员对象到不同的其他类型成员对象的方式去读取 union，则可能会误解底层的内存内容。此外，如果用于读取的成员对象大于用于存储数据的成员对象，则从 union 中读取的高位字节将采用未指定的值。
 
-### 3.4 可变参数功能滥用 ( Variadic Function Misuse)
+### 3.4 Variadic Function Misuse
 
 ​    C / C ++支持  variadic functions，除了固定数量的常规函数参数外，它们还接受可变数量的可变长函数参数。可变参数函数的源代码未指定这些可变参数的数量或类型。相反，固定参数和函数语义对可变参数的预期数量和类型进行编码。可变参数可以使用 va_arg 进行访问并同时进行类型转换。通常，不可能静态验证 va_arg 访问有效参数，或将参数转换为有效类型。缺少静态验证会导致类型错误，违反空间内存安全性以及使用未初始化的值。
 
@@ -192,7 +199,7 @@ sprintf(fmt2, user_input, ...);
 printf(fmt2, ...);
 ```
 
-### 3.5 其他漏洞 (Other Vulnerabilities)
+### 3.5 Other Vulnerabilities
 
 ​        在没有类型和内存安全性的情况下，还有其他操作可能会带来安全风险。值得注意的例子包括溢出错误，当在内存分配或指针算术运算中使用此类值时，可能会利用这些错误。如果使用攻击者控制的整数值来计算缓冲区大小或数组索引，则攻击者可能使该值溢出以分配比预期小的缓冲区（如清单6所示），或者绕过现有的数组索引检查，从而触发一个出界外的访问。
 
@@ -224,7 +231,7 @@ if (!tun) // Check is optimized out
 
 ​        现在，我们回顾相关的错误查找技术。我们在每个小节中都以对错误发现策略的非正式描述开头，然后对实现（或近似）该策略的机制进行描述。
 
-### 4.1 违反内存安全 (Memory Safety Violations)
+### 4.1 Memory Safety Violations
 
 ​        内存安全错误查找工具会检测未针对其预期目标（即，违反空间安全）或针对不再有效的目标（即，违反时间安全）的指针的间接引用。有两种检测这些错误的工具。我们在这里总结了它们的高级目标和属性，然后深入讨论了这些工具可用来检测内存安全错误的技术。
 
@@ -236,7 +243,7 @@ if (!tun) // Check is optimized out
 
 ​        基于身份的访问检查器检测与预期引用对象不匹配的内存地址访问。这些工具为每个分配的内存对象维护元数据（例如，边界或分配状态），并且具有适当的机制来确定程序中每个指针间接引用以确定该引用是否访问该指针的预期引用时，会发生元数据查找。基于身份的访问检查器可以使用按对象边界跟踪[34]， [37]-[43]或按指针边界跟踪[44] – [55] 可以检测到违反空间安全的行为，并且可以通过重用延迟[55]，锁定和钥匙检查[46]，[47]，[56]或悬置指针标记[57] – [60] 进行扩展。检测临时安全违规。基于身份的检查器比基于位置的访问检查器更为精确，因为它们不仅可以检测到对无效内存的访问，而且还可以检测对预期对象以外的有效内存的访问。但是，与基于位置的检查器相比，这些工具确实会带来更高的运行时性能开销。基于身份的检查器通常与非仪表代码不兼容。他们的假阳性检出率也比基于位置的检查器。
 
-#### 4.1.1 违反空间内存安全 (Spatial Memory Safety Violations)：
+#### 4.1.1 Spatial Memory Safety Violations
 
 **红色区域插入 (Red-zone Insertion)**：
 
@@ -272,7 +279,7 @@ if (!tun) // Check is optimized out
 
 ​        Per-object bounds trackers 还有其他缺点。首先，每个对象的边界跟踪器不会检测到对象内部的溢出（参阅8.2节）。其次，通过将指针指向OOB对象或将标记写入其高位标记为OOB可能会影响与未意识到程序中使用的边界检查方案的外部代码的兼容性。特别是，即使意识到了，外部代码也无法将 OOB 指针还原为内部普通入栈指针。
 
-#### 4.1.2 违反时间内存安全 (Temporal Memory Safety Violations)：
+#### 4.1.2 Temporal Memory Safety Violations
 
 **重用延迟 (Reuse Delay):**
 
@@ -296,7 +303,7 @@ if (!tun) // Check is optimized out
 
 ​        不基于污点跟踪的悬空指针标记工具具有一些基本限制。首先，它们需要源代码？的可用性，因为源依赖精确的类型信息来确定哪些操作存储新的指针。其次，如果程序以类型不安全的方式（例如，通过将其强制转换为整数）复制指针，则它们将无法维护准确的元数据。第三，也是最重要的是，它们只能将对象链接到存储在内存中的指针，因此不知道存储在寄存器中的指针悬空。基于污点跟踪的工具（例如Undangle）没有这些缺点，但是会带来明显的性能和内存开销。
 
-### 4.2 使用未初始化的变量 (Use of Uninitialized Variables)
+### 4.2 Use of Uninitialized Variables
 
 ​        下述工具检测未初始化值的使用。
 
@@ -308,7 +315,7 @@ if (!tun) // Check is optimized out
 
 ​        检测未初始化内存的读取会产生许多误报检测，因为C ++ 14标准明确允许未初始化值在不使用的情况下在程序中传递。例如，将部分未初始化的结构从一个位置复制到另一个位置时，就会发生这种情况。Memcheck 尝试通过将错误报告限制为四种情况来检测未初始化值的使用：（i）对（部分）未定义的指针的间接引用；（ii）在（部分）未定义的值上分支(branching)；（iii）将未定义的值传递给系统调用； （iv）将未初始化的值复制到浮点寄存器[28]。为了支持该策略，Memcheck 为程序存储器中的每个部分初始化的字节添加了一个影子状态字节。这使Memcheck能够以位级精度跟踪程序所有内存的定义。Memcheck 近似于C ++14语义，但是会产生假阴性（未能报告未初始化内存的非法使用）和假阳性（报告未初始化内存的合法使用），鉴于Memcheck 在二进制级别而非源代码级别运行，因此这是不可避免的。MemorySanitizer （MSan）基本上执行与Memcheck相同的策略，但是在编译器的中间表示（IR）级别上对程序进行检测[66]。IR代码比二进制代码携带更多的信息，这使得 MSan 比 Memcheck 更精确。MSan不会产生误报（前提是已检测到整个程序）并且几乎不会产生误报。它的性能开销也比Memcheck低一个数量级。
 
-### 4.3 指针类型错误 ( Pointer Type Errors)
+### 4.3 Pointer Type Errors
 
 ​        这些工具检测不兼容类型的指针的类型错误转化和间接引用。
 
@@ -330,7 +337,7 @@ if (!tun) // Check is optimized out
 
 ​        几种工具还可以检测间接函数调用中的指针类型错误，即通过与被调用函数的[67]，[68]，[75]类型不兼容的指针来调用函数。基于功能签名的前沿控制流完整性机制，例如 Clang CFI [68]，可以看作是检测此类功能指针误用的 sanitizers。由于所有函数签名在编译时都是已知的，因此这些工具可以检测指针类型和函数类型之间的不匹配，而无需维护运行时标记。
 
-### 4.4 可变参数功能误用 (Variadic Function Misuse)
+### 4.4 Variadic Function Misuse
 
 ​        这些工具检测违反内存安全性的行为，未初始化的变量使用特定于可变参数的函数。
 
@@ -342,7 +349,7 @@ if (!tun) // Check is optimized out
 
 ​        FormatGuard 防止 printf（）  读取比调用者传递的参数更多的参数[78]。FormatGuard通过将调用重定向到受保护的printf 实现来实现，该实现每次通过 va_arg  检索可变参数时都会递增计数器。如果计数器超过了在调用处指定的参数数量，则 FormatGuard 会发出警报。HexVASAN 将参数计数推广到所有可变参数函数，并且还添加了类型检查[79]。HexVASAN对可变参数函数的调用站点进行检测，以捕获传递给被调用方的参数的数量和类型，并将此信息保存在元数据存储中。然后，该工具会检测 va_start 和 va_copy 操作从元数据存储中检索信息，并且它对 va_arg 操作进行检测，以检查所访问的参数是否在给定数量的参数和给定类型内。
 
-### 4.5 其他漏洞
+### 4.5 Other Vulnerabilities
 
 这些工具可以检测其他未定义的行为或定义良好但潜在的意外和危险行为。
 
@@ -354,25 +361,25 @@ UndefinedBehaviorSanitizer（UB-San）是一种动态工具，可检测到我们
 
 ​         sanitizers通过将内联引用监视器（IRM）嵌入到程序中来实现其错误查找策略。这些 IRM 监视和调解可能导致漏洞的所有程序指令。这样的指令包括（但不限于）内存 load 和 store、stack frame (de) allocations、对内存分配函数的调用（例如 malloc ）、系统调用。可以使用编译器，链接器或检测框架来嵌入IRM。
 
-### 5.1 源码层次检测 (Language-level Instrumentation)
+### 5.1 Language-level Instrumentation
 
 ​        可以将 sanitizers嵌入源代码或抽象语法树（AST）级别。源代码和AST是特定于语言的，通常包含完整的类型信息、语言的特定语法、编译时间评估的表达式，例如 const_cast 和 static_cast 类型转换。语言特定信息通常在 AST 转化为更为底层的 IR 层次时被丢弃。对于通过指针转换监视来检测指针类型错误的 sanitizers，建议（甚至是必要）使用语言级别的检测。
 
 ​        在语言级别进行检测的另一个优点是，编译器在整个编译的早期阶段都保留了程序的完整语义。因此， sanitizers可以看到程序员打算使用的语义。在编译的后期阶段，编译器可以假定程序不包含未定义的行为，并且可以基于此假设优化代码（例如，通过消除看似不必要的安全检查）。在语言级别进行检测的缺点是应用程序的整个源代码必须可用，并且代码必须以预期的语言编写。因此，该方法不适用于链接到闭源库的应用程序，也不适用于包含内联汇编代码的应用程序[80]。
 
-### 5.2 IR层次检测 (IR-level Instrumentation)
+### 5.2 IR-level Instrumentation
 
 ​        当 AST 被转化为更为底层的 IR 代码中时， sanitizers也可以嵌入到后期编译中。诸如 LLVM 之类的编译器后端支持 IR 层次的检测[81]。这种方法比源代码级转换更通用，因为编译器 IR （通常）独立于源语言。因此，通过在此级别进行检测， sanitizers可以自动支持多种源语言。另一个优点是，编译器后端实现了可以由 sanitizers使用的各种静态分析和优化过程。 sanitizers可以利用此基础结构来优化它们嵌入到程序中的IRM（例如，通过删除冗余或可证明安全的检查）。
 
 ​        IR级别仪器的缺点与语言级别仪器的缺点在很大程度上相似，即缺乏对闭源库和内联汇编代码的支持（第5.1节）。例外地，AddressSanitizer（ASan）确实通过检测内联汇编块中的 MOV 和 MOVAPS 指令，为内联x86汇编代码提供了有限的支持[31]。但是，这种方法是特定于体系结构的，需要针对每个受支持的体系结构重新实现或复制。
 
-### 5.3 二进制检测 (Binary Instrumentation)
+### 5.3 Binary Instrumentation
 
 ​        动态二进制翻译（DBT）框架允许在运行时对程序进行检测[82]-[84]。他们读取程序代码，对其进行检测，然后在程序执行时将其翻译为机器代码，并暴露各种影响执行的钩子（hooks）。编译器为基础的基于DBT的工具的主要优点是他们在闭源程序上表现不错。此外，DBT框架无论源码是啥，都提供了对用户模式代码的完整检测覆盖。DBT框架可以检测程序本身、第三方代码（可以动态加载）、甚至动态生成的代码。
 
 ​        与静态仪器工具相比，DBT 的主要缺点是运行时性能开销高得多（参阅第8.5节）。该开销可以主要归因于运行时指令的解码和翻译。通过使用静态二进制检测（SBI）框架对二进制文件进行静态检测，可以部分解决此问题。但是，基于  SBI 和 DBT 的 sanitizers都必须操作实际中不包含类型信息或特定语言文法的二进制文件。因此，在此阶段无法嵌入指针类型错误的 sanitizers。关于堆栈帧和全局数据节布局的信息也在二进制级别丢失，这使得使用二进制检测时无法插入完全精确的空间内存安全 sanitizers。
 
-### 5.4 库打桩 (Library Interposition)
+### 5.4 Library Interposition
 
 ​        尽管非常粗糙，有一种使用库打桩（interposer）拦截对库函数的调用的方法[85]。库打桩是一个共享库，当将其预加载到程序中时[86]，它可以拦截、监视和操纵程序中的所有库间函数调用。一些 sanitizers使用此方法来拦截对内存分配函数（例如 malloc 和 free ）的调用。
 
@@ -382,7 +389,7 @@ UndefinedBehaviorSanitizer（UB-San）是一种动态工具，可检测到我们
 
 ​         sanitizers设计的一个重要方面是它如何存储和查找元数据。该元数据通常捕获有关程序中使用的指针或内存对象的状态的信息。尽管运行时性能不是 sanitizers开发人员或用户的主要考虑因素，但是大多数 sanitizers存储的元数据数量巨大，这意味着即使存储方案中的效率低下，也会使 sanitizers的运行速度降低到令人无法接受的程度。元数据存储方案还大致确定了是否可以结合使用两个 sanitizers。如果两个独立的 sanitizers都使用元数据方案来更改程序中的指针和/或对象表示，则它们通常不能一起使用。
 
-### 6.1 对象元数据 (Object Metadata)
+### 6.1 Object Metadata
 
 ​        一些 sanitizers程序使用对象元数据存储方案来存储所有分配的内存对象的状态。这种状态可能包括对象的大小，类型，状态（例如，已分配/已释放，已初始化/未初始化），分配标识符等。
 
@@ -420,7 +427,7 @@ metadata_addr = shadow_base +（block_addr >> 3）
 
 ​        除了先前介绍的元数据方案的变体之外，一些工具作者还选择了一系列自定义数据结构和特定于工具的解决方案来存储元数据。边界检查器（例如 J＆K，CRED 和 D＆A ）使用展开树[34]，[37]，[38]。UBSan 和 CaVer 使用附加的哈希表作为缓存来存储类型检查的最新结果[67]，[69]。DangNull 利用线程安全的红黑树对对象之间的关系进行编码[58]。请注意，当使用不支持并发访问的数据结构时，必须通过多线程设置中的显式锁来保护它。对于线程局部变量或堆栈变量，每个线程的元数据也是一种选择，例如，CaVer 对于堆栈和全局对象有每个线程的红黑树。
 
-### 6.2 指针元数据 （Pointer Metadata）
+### 6.2 Pointer Metadata
 
 **胖指针 (Fat Pointers)**:
 
@@ -450,7 +457,7 @@ size_t size; // Size of the referent
 
 ​        与指针内元数据相比，不连续的元数据的主要缺点是，每当程序将指针复制到新的内存位置时， sanitizer 都必须显式传递元数据。例如，如果程序调用 memcpy 复制包含指针的数据结构，则 sanitizers 必须更新目标数据结构中指针的元数据存储。与在指针的元数据，相比之下，元数据总是与指针一起传递。
 
-### 6.3 静态元数据 (Static Metadata)
+### 6.3 Static Metadata
 
 某些 sanitizers 需要编译器丢弃的某些信息才能在运行时执行检查。为了在运行时提供所需的编译时信息，这些 sanitizers通常将静态元数据嵌入到已编译的程序中。例如，bad-casting sanitizers 在编译时创建类型层次结构表，以便于在运行时进行类型转换检查。HexVASAN 是可变参数函数调用 sanitizer，它为每个可变参数调用站点构建静态元数据，以对参数的数量及其类型进行编码。在运行时，instrumented caller 将静态元数据推送到自定义堆栈上，callee 使用该堆栈检查提供的参数的有效性。
 
@@ -472,7 +479,7 @@ size_t size; // Size of the referent
 
 ​        对于每个 sanitizers，该表显示了它发现的错误，发现这些错误的技术以及使用的元数据存储方案（如果有）。饼形代表我们对 sanitizers的有效性以及其在运行时和内存开销方面的效率的评估。彩色的单元格表示已知 sanitizers会产生假阳性误报。我们在第8.1节中讨论这些误报的原因。通过在相同的实验平台上使用相同的基准测试套件运行这些工具中的10个（即表II中其性能开销单元标有星号的工具），我们验证了报告的性能数字。我们在附录A中报告了这些工具的确切性能数字。
 
-### 8.1 误报（False Positives）
+### 8.1 False Positives
 
 ​        Sanitizers 的实用性主要取决于其报告错误的准确性。使用 sanitizers的开发人员希望最大程度地减少检查其错误报告所花费的时间。因此，对于 sanitizers而言，最理想的属性是它不会误报（即，报告的所有错误都是真正的错误），而假阴性漏报情况（即，sanitizer 发现所有可能的错误）是次要问题。我们确定了以下可能导致误报检测的重复出现的问题。
 
@@ -490,7 +497,7 @@ size_t size; // Size of the referent
 
 ​        某些工具不遵守语言标准的别名规则。Loginov 等人的指针使用监视器要求使用与对象的运行时类型相同的类型访问对象的存储值[72]。HexVASAN 要求给定的参数类型与 va_arg  [79]中使用的参数类型相同。这些工具将生成错误警报，例如，当程序合法使用字符类型指针来给不同类型的对象取别名时（？）。
 
-### 8.2 漏报 (False Negatives)
+### 8.2 False Negatives
 
 ​        漏报（即，无法报告范围内的错误）是由于错误发现策略与实施该策略的机制之间的差异而引起的。我们确定了几种错误发现机制，这些机制不能完全覆盖该策略应涵盖的所有错误。
 
@@ -512,7 +519,7 @@ size_t size; // Size of the referent
 
 ​        某些 sanitizers 无法识别转换为整数或通过 memcpy 复制的指针。例如，使用不连续的 per-pointer metadata 的基于身份的访问检查程序通常无法在这些构造之间传递指针的范围。此问题还影响通过标记指针类型变量的存储来标记悬空指针的 sanitizers，但是漏报临时转换为整数或以类型不安全的方式复制的指针。
 
-### 8.3 检测不完整 (Incomplete Instrumentation)
+### 8.3 Incomplete Instrumentation
 
 ​         静态测试程序的 Sanitizers 不能完全支持在运行时（例如，实时编译器）或没有或不能进行检测的外部库程序（例如，由于其源代码是不可用）。某些在编译器IR级别检测程序的 sanitizers也不支持包含嵌入汇编代码的程序，因为编译器前端不会将此类代码转换为编译器IR代码。在所有这些情况下， sanitizers可能无法插入检查，从而可能导致漏报。例如，如果程序从动态生成的代码块中访问内存，则违反空间安全性的 sanitizer 通常将无法验证内存访问是否合法。
 
@@ -522,11 +529,11 @@ size_t size; // Size of the referent
 
 ​        这些问题可以通过在运行时嵌入 sanitizers 来解决，而可以使用动态二进制 instrumentation 框架来解决。但是，这些框架无法提供准确的类型信息，因此不支持某些类型的 sanitizers（例如，指针转换监视器）。
 
-### 8.4 线程安全 （ Thread Safety）
+### 8.4 Thread Safety
 
 ​        在多线程程序中，维护指针和对象的元数据的 sanitizers可能导致误报和漏报。之所以会发生这种情况，是因为它们可能以线程不安全的方式访问元数据结构，或者因为 sanitizers 不保证它与程序对其关联的指针或对象的原子更新在同一事务中更新元数据。前一个问题影响 FreeSentry [59]，并使 sanitizers无法支持多线程。后一个问题会影响 Intel Pointer Checker [49]， Intel MPX [88] 和 MSan [66] 等。这些 sanitizers 允许指针或对象与其元数据不同步，这可能导致误报和/或漏报。诸如Memcheck [28]之类的某些 sanitizers 通过序列化多线程程序的执行来规避此问题，从而始终以原子方式自动更新元数据以及与之关联的指针和对象。
 
-### 8.5 绩效开销 （Performance Overhead）
+### 8.5 Performance Overhead
 
 ​        Sanitizers 的运行时性能要求不如 exploit mitigations 的要求严格。尽管后者通常仅在运行时开销保持在5％以下的情况下才能进行实际部署[15]，但我们观察到，实际使用的 sanitizers开销不到3倍。在某些情况下，例如当程序的源代码不可用（完全可用）或程序即时(on-the-fly)生成代码时，甚至可以接受高达20倍的较大开销。但是，有充分的理由尝试尽量减少 sanitizers 的开销。特别是一个原因是 sanitizers变得越快，启用 sanitizers 的速度就越快程序可能很 fuzzed。反过来，这使得 fuzzer 可以在停止取得有意义的进展之前探索更多的代码路径(请参阅第7节)。
 
@@ -536,7 +543,7 @@ size_t size; // Size of the referent
 
 ​        检查成本与 sanitizers 的检查频率密切相关，而检查频率又很大程度上取决于 sanitizers 的类型。由于内存错误检测器通常需要覆盖程序执行的所有内存访问或指针算术运算，因此与其他工具（例如监视较小操作集的类型转换检查器）相比，它们会引入更多开销。一些内存错误检测工具提供选择性的工具，例如仅监视内存写入，以降低覆盖范围为代价实现更好的性能。
 
-### 8.6 内存开销 (Memory Overhead)
+### 8.6 Memory Overhead
 
 ​        增大内存对象分配大小或使用 disjoint or shadow metadata 存储方案的 Sanitizers 具有相当大的内存占用量。在可寻址内存空间有限的32位平台上，这可能会出现问题。例如，ASan [31]将 red zones 插入每个内存对象，并维护直接映射的阴影位图以存储可寻址性信息。因此，ASan将 SPEC2006 基准测试的内存使用量平均提高了3.37倍。基于Guard page 的诸如 Electric Fence [32]和 PageHeap [33]之类的内存安全 sanitizers，会在动态分配的对象的末尾插入整个内存页，因此具有更大的内存占用量。但是，一般而言，即使 sanitizers为程序中的每个对象或指针存储元数据，大多数 sanitizers也会平均将程序的内存占用量增加不到三倍。
 
