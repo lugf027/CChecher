@@ -19,24 +19,20 @@
   * [2. EXPLOIT MITIGATIONS VS. SANITIZERS](#2-exploit-mitigations-vs-sanitizers)
 
   * [3. LOW - LEVEL VULNERABILITIES](#3-low---level-vulnerabilities)
-    
+
     + [3.1 Memory Safety Violations](#31-memory-safety-violations)
-      - [3.1.1 Spatial Safety Violations](#311-spatial-safety-violations)
-      - [3.1.2 Temporal Safety Violations](#312-temporal-safety-violations)
     + [3.2 Use of Uninitialized Variables](#32-use-of-uninitialized-variables)
     + [3.3 Pointer Type Errors](#33-pointer-type-errors)
     + [3.4 Variadic Function Misuse](#34-variadic-function-misuse)
     + [3.5 Other Vulnerabilities](#35-other-vulnerabilities)
-    
+
   * [4. BUG FINDING TECHNIQUES](#4-bug-finding-techniques)
     + [4.1 Memory Safety Violations](#41-memory-safety-violations)
-      - [4.1.1 Spatial Memory Safety Violations](#411-spatial-memory-safety-violations)
-      - [4.1.2 Temporal Memory Safety Violations](#412-temporal-memory-safety-violations)
     + [4.2 Use of Uninitialized Variables](#42-use-of-uninitialized-variables)
     + [4.3 Pointer Type Errors](#43-pointer-type-errors)
     + [4.4 Variadic Function Misuse](#44-variadic-function-misuse)
     + [4.5 Other Vulnerabilities](#45-other-vulnerabilities)
-    
+
   * [5. PROGRAM INSTRUMENTATION](#5-program-instrumentation)
     + [5.1 Language-level Instrumentation](#51-language-level-instrumentation)
     + [5.2 IR-level Instrumentation](#52-ir-level-instrumentation)
