@@ -1,2 +1,2 @@
-# CChecher
+# CChecker
 C language array bounds checking tool based on clang / llvm
